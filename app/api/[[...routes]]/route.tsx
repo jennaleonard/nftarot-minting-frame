@@ -11,14 +11,10 @@ import {
   createPublicClient,
   http,
   parseAbiParameters,
-  decodeEventLog,
   parseEventLogs,
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { zoraCreator1155ImplABI } from "@zoralabs/protocol-deployments";
-
-// getTransactionReceipt, pull logs
-// decodeEventLog to get tokenId
 
 export const publicClient = createPublicClient({
   chain: baseSepolia,
@@ -28,6 +24,7 @@ export const publicClient = createPublicClient({
 const app = new Frog({
   assetsPath: "/",
   basePath: "/api",
+  imageAspectRatio: "1:1",
   // Supply a Hub to enable frame verification.
   // hub: neynar({ apiKey: 'NEYNAR_FROG_FM' })
   title: "Frog Frame",
@@ -37,18 +34,13 @@ const app = new Frog({
 // export const runtime = 'edge'
 
 app.frame("/", (c) => {
-  const { buttonValue, inputText, status } = c;
-  const fruit = inputText || buttonValue;
   return c.res({
-    action: "/card-reveal",
     image: (
       <div
         style={{
           alignItems: "center",
-          background:
-            status === "response"
-              ? "linear-gradient(to right, #432889, #17101F)"
-              : "black",
+          background: "black",
+          color: "white",
           backgroundSize: "100% 100%",
           display: "flex",
           flexDirection: "column",
@@ -59,37 +51,50 @@ app.frame("/", (c) => {
           width: "100%",
         }}
       >
-        <div
-          style={{
-            color: "white",
-            fontSize: 60,
-            fontStyle: "normal",
-            letterSpacing: "-0.025em",
-            lineHeight: 1.4,
-            marginTop: 30,
-            padding: "0 120px",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {status === "response"
-            ? `Nice choice.${fruit ? ` ${fruit.toUpperCase()}!!` : ""}`
-            : "Welcome!"}
-        </div>
+        Welcome to the frammeeee
       </div>
     ),
     intents: [
-      <TextInput placeholder="Enter custom fruit..." />,
-      <Button value="apples">Apples</Button>,
-      <Button value="oranges">Oranges</Button>,
-      <Button value="bananas">Bananas</Button>,
+      <Button action="/card-select" value="begin reading">
+        Begin Reading
+      </Button>,
+      <Button.Link href="https://www.nftarot.com">Learn More</Button.Link>,
+    ],
+  });
+});
+
+app.frame("/card-select", (c) => {
+  return c.res({
+    action: "/card-reveal",
+    image: (
+      <div
+        style={{
+          alignItems: "center",
+          color: "white",
+          background: "black",
+          backgroundSize: "100% 100%",
+          display: "flex",
+          flexDirection: "column",
+          flexWrap: "nowrap",
+          height: "100%",
+          justifyContent: "center",
+          textAlign: "center",
+          width: "100%",
+        }}
+      >
+        Ya, so choose yer fighter
+      </div>
+    ),
+    intents: [
+      <Button action="/" value="go back">
+        Go Back
+      </Button>,
       <Button.Transaction target="/mint">Mint</Button.Transaction>,
-      status === "response" && <Button.Reset>Reset</Button.Reset>,
     ],
   });
 });
 
 app.transaction("/mint", (c) => {
-  const { inputText } = c;
   const minter = "0xd34872BE0cdb6b09d45FCa067B07f04a1A9aE1aE" as Address;
   const tokenId = BigInt(1);
   const quantity = BigInt(1);
@@ -124,13 +129,34 @@ app.frame("/card-reveal", async (c) => {
     abi: zoraCreator1155ImplABI,
     logs: transaction.logs,
   });
-  console.log(decodeLog);
+  const mintedCardId = decodeLog.forEach((event) => {
+    if (event.eventName === "Purchased") {
+      const tokenId = event.args.tokenId;
+      console.log(tokenId);
+    } else {
+      console.log("No tokenId for this event type.");
+    }
+  });
+
+  console.log(mintedCardId);
+
   return c.res({
     image: (
       <div style={{ color: "black", display: "flex", fontSize: 60 }}>
         Reveal Card ID: {transactionId}
       </div>
     ),
+    intents: [
+      <Button action="/" value="expand reading">
+        Expand Reading
+      </Button>,
+      <Button action="/" value="share">
+        Share
+      </Button>,
+      <Button action="/" value="new reading">
+        New Reading
+      </Button>,
+    ],
   });
 });
 
