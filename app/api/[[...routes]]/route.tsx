@@ -58,7 +58,9 @@ app.frame("/", (c) => {
       <Button action="/card-select" value="begin reading">
         Begin Reading
       </Button>,
-      <Button.Link href="https://www.nftarot.com">Learn More</Button.Link>,
+      <Button.Link href="https://www.nftarot.com/about">
+        Learn More
+      </Button.Link>,
     ],
   });
 });
@@ -95,8 +97,13 @@ app.frame("/card-select", (c) => {
 });
 
 app.transaction("/mint", (c) => {
+  const minIndex = 0;
+  const maxIndex = 155;
+  const randomIndex =
+    Math.floor(Math.random() * (maxIndex - minIndex + 1)) + minIndex;
+
   const minter = "0xd34872BE0cdb6b09d45FCa067B07f04a1A9aE1aE" as Address;
-  const tokenId = BigInt(1);
+  const tokenId = BigInt(randomIndex); // frog does not like this for some reason, when I change it back to 1 the transaction works as expected
   const quantity = BigInt(1);
   const rewardsRecipients = [
     "0xD246C16EC3b555234630Ab83883aAAcdfd946ceF" as Address,
@@ -129,16 +136,14 @@ app.frame("/card-reveal", async (c) => {
     abi: zoraCreator1155ImplABI,
     logs: transaction.logs,
   });
-  const mintedCardId = decodeLog.forEach((event) => {
+  decodeLog.forEach((event) => {
     if (event.eventName === "Purchased") {
-      const tokenId = event.args.tokenId;
-      console.log(tokenId);
+      const cardTokenId = event.args.tokenId;
+      console.log(cardTokenId);
     } else {
       console.log("No tokenId for this event type.");
     }
   });
-
-  console.log(mintedCardId);
 
   return c.res({
     image: (
