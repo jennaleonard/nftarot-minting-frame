@@ -1,6 +1,6 @@
 /** @jsxImportSource frog/jsx */
 
-import { Button, Frog, TextInput, parseEther } from "frog";
+import { Button, Frog } from "frog";
 import { devtools } from "frog/dev";
 // import { neynar } from 'frog/hubs'
 import { handle } from "frog/next";
@@ -15,11 +15,15 @@ import {
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { zoraCreator1155ImplABI } from "@zoralabs/protocol-deployments";
+import { generateRandomIndex, getCardByIndex } from "@/utils/cardUtils";
+import { createReading } from "@/utils/dbUtils";
 
 export const publicClient = createPublicClient({
   chain: baseSepolia,
   transport: http(),
 });
+
+export const colors = { purple: "#6D2AFB", yellow: "#FFC700" };
 
 const app = new Frog({
   assetsPath: "/",
@@ -35,12 +39,13 @@ const app = new Frog({
 
 app.frame("/", (c) => {
   return c.res({
+    action: "/card-select",
     image: (
       <div
         style={{
           alignItems: "center",
-          background: "black",
-          color: "white",
+          background: colors.purple,
+          color: "black",
           backgroundSize: "100% 100%",
           display: "flex",
           flexDirection: "column",
@@ -49,15 +54,22 @@ app.frame("/", (c) => {
           justifyContent: "center",
           textAlign: "center",
           width: "100%",
+          fontSize: "2em",
         }}
       >
-        Welcome to the frammeeee
+        <img
+          src={"/frames-card-back.png"}
+          style={{
+            width: "280px",
+            height: "425px",
+            marginBottom: "1rem",
+          }}
+        />
+        Mint a tarot reading onchain!
       </div>
     ),
     intents: [
-      <Button action="/card-select" value="begin reading">
-        Begin Reading
-      </Button>,
+      <Button value="begin reading">Begin Reading</Button>,
       <Button.Link href="https://www.nftarot.com/about">
         Learn More
       </Button.Link>,
@@ -72,9 +84,8 @@ app.frame("/card-select", (c) => {
       <div
         style={{
           alignItems: "center",
-          color: "white",
-          background: "black",
-          backgroundSize: "100% 100%",
+          background: colors.purple,
+          backgroundSize: "100%",
           display: "flex",
           flexDirection: "column",
           flexWrap: "nowrap",
@@ -84,7 +95,24 @@ app.frame("/card-select", (c) => {
           width: "100%",
         }}
       >
-        Ya, so choose yer fighter
+        <div
+          style={{
+            background: colors.yellow,
+            width: "40%",
+            height: "80%",
+            border: "5px solid black",
+            borderRadius: "2rem",
+            color: "black",
+            fontSize: "2.5rem",
+            textWrap: "wrap",
+            padding: "1rem",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          Take a deep breath. Set your intention. When you're ready, mint your
+          reading.
+        </div>
       </div>
     ),
     intents: [
@@ -97,16 +125,11 @@ app.frame("/card-select", (c) => {
 });
 
 app.transaction("/mint", (c) => {
-  const minIndex = 0;
-  const maxIndex = 155;
-  const randomIndex =
-    Math.floor(Math.random() * (maxIndex - minIndex + 1)) + minIndex;
-
+  const randomIndex = generateRandomIndex();
   const minter = "0xd34872BE0cdb6b09d45FCa067B07f04a1A9aE1aE" as Address;
-  const tokenId = BigInt(randomIndex); // frog does not like this for some reason, when I change it back to 1 the transaction works as expected
+  const tokenId = BigInt(6); // we've only created 6 tokens on testnet, randomIndex will apply later
   const quantity = BigInt(1);
   const rewardsRecipients = [
-    "0xD246C16EC3b555234630Ab83883aAAcdfd946ceF" as Address,
     "0xD246C16EC3b555234630Ab83883aAAcdfd946ceF" as Address,
   ];
   const minterArguments = encodeAbiParameters(
@@ -129,6 +152,7 @@ app.transaction("/mint", (c) => {
 
 app.frame("/card-reveal", async (c) => {
   const { transactionId } = c;
+  // select the cardToken and wallet from the transaction
   const transaction = await publicClient.waitForTransactionReceipt({
     hash: transactionId as Address,
   });
@@ -136,25 +160,58 @@ app.frame("/card-reveal", async (c) => {
     abi: zoraCreator1155ImplABI,
     logs: transaction.logs,
   });
-  decodeLog.forEach((event) => {
-    if (event.eventName === "Purchased") {
-      const cardTokenId = event.args.tokenId;
-      console.log(cardTokenId);
-    } else {
-      console.log("No tokenId for this event type.");
-    }
-  });
+  // the wallet and tokenId can be found in "Purchased"
+  const purchasedEvent = decodeLog.filter(
+    (event) => event.eventName === "Purchased"
+  );
+  const cardTokenId = purchasedEvent[0].args.tokenId;
+  const senderWallet = purchasedEvent[0].args.sender;
+  const card = await getCardByIndex(Number(cardTokenId));
+  let framesReadingId;
+  if (card) {
+    framesReadingId = await createReading(
+      senderWallet,
+      card?.card_id,
+      card?.deck_id,
+      card?.image_url,
+      Number(cardTokenId)
+    );
+  }
 
   return c.res({
     image: (
-      <div style={{ color: "black", display: "flex", fontSize: 60 }}>
-        Reveal Card ID: {transactionId}
+      <div
+        style={{
+          alignItems: "center",
+          background: colors.purple,
+          display: "flex",
+          flexDirection: "column",
+          flexWrap: "nowrap",
+          height: "100%",
+          justifyContent: "center",
+          textAlign: "center",
+          width: "100%",
+          color: "black",
+          fontSize: "2rem",
+        }}
+      >
+        <img
+          src={card?.image_url}
+          style={{
+            width: "284px",
+            height: "426px",
+            border: "5px solid black",
+            borderRadius: "1rem",
+            marginBottom: "1rem",
+          }}
+        />
+        {card?.card_name}
       </div>
     ),
     intents: [
-      <Button action="/" value="expand reading">
+      <Button.Link href={`https://nftarot.com/card-reveal/${framesReadingId}`}>
         Expand Reading
-      </Button>,
+      </Button.Link>,
       <Button action="/" value="share">
         Share
       </Button>,
