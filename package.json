@@ -26,7 +26,6 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^10.0.0",
-    "typescript": "^5",
-    "vercel": "^32.4.1"
+    "typescript": "^5"
   }
 }

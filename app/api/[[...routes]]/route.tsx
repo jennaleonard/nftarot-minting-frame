@@ -18,7 +18,7 @@ import { zoraCreator1155ImplABI } from "@zoralabs/protocol-deployments";
 import { generateRandomIndex, getCardByIndex } from "@/utils/cardUtils";
 import { createReading } from "@/utils/dbUtils";
 
-export const publicClient = createPublicClient({
+const publicClient = createPublicClient({
   chain: baseSepolia,
   transport: http(),
 });
