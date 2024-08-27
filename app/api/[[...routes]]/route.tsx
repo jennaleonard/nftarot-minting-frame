@@ -23,8 +23,6 @@ export const publicClient = createPublicClient({
   transport: http(),
 });
 
-export const colors = { purple: "#6D2AFB", yellow: "#FFC700" };
-
 const app = new Frog({
   assetsPath: "/",
   basePath: "/api",
@@ -44,28 +42,44 @@ app.frame("/", (c) => {
       <div
         style={{
           alignItems: "center",
-          background: colors.purple,
-          color: "black",
+          background: "black",
+          color: "white",
           backgroundSize: "100% 100%",
           display: "flex",
           flexDirection: "column",
           flexWrap: "nowrap",
+          flexGap: ".5rem",
           height: "100%",
           justifyContent: "center",
           textAlign: "center",
           width: "100%",
-          fontSize: "2em",
+          textWrap: "wrap",
         }}
       >
-        <img
-          src={"/frames-card-back.png"}
+        <h1
           style={{
-            width: "280px",
-            height: "425px",
-            marginBottom: "1rem",
+            textTransform: "uppercase",
+            marginBottom: "0",
+            fontSize: "1.75rem",
+          }}
+        >
+          OnChain Tarot Reading
+        </h1>
+        <p style={{ fontSize: "1.55rem", marginTop: "0" }}>with NFTarot</p>
+        <img
+          src={"/card-back.png"}
+          style={{
+            width: "227px",
+            height: "387px",
+            marginBottom: ".25rem",
           }}
         />
-        Mint a tarot reading onchain!
+        <p
+          style={{ fontSize: "1.25rem", width: "40%", marginBottom: "3.5rem" }}
+        >
+          Leveraging energy exchange with the blockchain to foster a moment of
+          reflection & guidance.
+        </p>
       </div>
     ),
     intents: [
@@ -84,7 +98,7 @@ app.frame("/card-select", (c) => {
       <div
         style={{
           alignItems: "center",
-          background: colors.purple,
+          background: "black",
           backgroundSize: "100%",
           display: "flex",
           flexDirection: "column",
@@ -93,33 +107,20 @@ app.frame("/card-select", (c) => {
           justifyContent: "center",
           textAlign: "center",
           width: "100%",
+          color: "white",
         }}
       >
-        <div
-          style={{
-            background: colors.yellow,
-            width: "40%",
-            height: "80%",
-            border: "5px solid black",
-            borderRadius: "2rem",
-            color: "black",
-            fontSize: "2.5rem",
-            textWrap: "wrap",
-            padding: "1rem",
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
+        <p>
           Take a deep breath. Set your intention. When you're ready, mint your
           reading.
-        </div>
+        </p>
       </div>
     ),
     intents: [
       <Button action="/" value="go back">
         Go Back
       </Button>,
-      <Button.Transaction target="/mint">Mint</Button.Transaction>,
+      <Button.Transaction target="/mint">Mint and Reveal</Button.Transaction>,
     ],
   });
 });
@@ -160,6 +161,7 @@ app.frame("/card-reveal", async (c) => {
     abi: zoraCreator1155ImplABI,
     logs: transaction.logs,
   });
+  console.log(decodeLog);
   // the wallet and tokenId can be found in "Purchased"
   const purchasedEvent = decodeLog.filter(
     (event) => event.eventName === "Purchased"
@@ -177,46 +179,65 @@ app.frame("/card-reveal", async (c) => {
       Number(cardTokenId)
     );
   }
+  console.log(framesReadingId);
+
+  const targetUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
+    `Here's my tarot reading for the day via NFTarot:`
+  )}&embeds[]=${encodeURIComponent(
+    "https://localhost:3000/card-reveal/"
+  )}${framesReadingId}`;
 
   return c.res({
     image: (
       <div
         style={{
           alignItems: "center",
-          background: colors.purple,
+          background: "black",
           display: "flex",
-          flexDirection: "column",
-          flexWrap: "nowrap",
           height: "100%",
           justifyContent: "center",
-          textAlign: "center",
           width: "100%",
-          color: "black",
+          color: "white",
           fontSize: "2rem",
         }}
       >
         <img
           src={card?.image_url}
           style={{
-            width: "284px",
-            height: "426px",
+            width: "321px",
+            height: "547px",
             border: "5px solid black",
             borderRadius: "1rem",
-            marginBottom: "1rem",
+            margin: "0 1rem 0 6rem",
           }}
         />
-        {card?.card_name}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            width: "30%",
+            alignItems: "flex-start",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "1.75rem",
+              marginBottom: "0",
+              textTransform: "uppercase",
+            }}
+          >
+            {card?.card_name}
+          </p>
+          <p style={{ fontSize: "1.15rem", width: "70%", marginTop: ".5rem" }}>
+            {card?.card_read_main}
+          </p>
+        </div>
       </div>
     ),
     intents: [
-      <Button.Link href={`https://nftarot.com/card-reveal/${framesReadingId}`}>
-        Expand Reading
-      </Button.Link>,
-      <Button action="/" value="share">
-        Share
-      </Button>,
-      <Button action="/" value="new reading">
-        New Reading
+      <Button.Link href={`${targetUrl}`}>Share Reading</Button.Link>,
+      <Button action="/" value="begin again">
+        Begin Again
       </Button>,
     ],
   });
