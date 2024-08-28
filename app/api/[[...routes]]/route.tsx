@@ -34,6 +34,8 @@ const app = new Frog({
 
 // Uncomment to use Edge Runtime
 // export const runtime = 'edge'
+export const randomIndex = generateRandomIndex();
+export const randomTokenId = BigInt(6);
 
 app.frame("/", (c) => {
   return c.res({
@@ -93,7 +95,7 @@ app.frame("/", (c) => {
 
 app.frame("/card-select", (c) => {
   return c.res({
-    action: "/card-reveal",
+    action: `/card-reveal/${randomTokenId}`,
     image: (
       <div
         style={{
@@ -126,9 +128,8 @@ app.frame("/card-select", (c) => {
 });
 
 app.transaction("/mint", (c) => {
-  const randomIndex = generateRandomIndex();
   const minter = "0xd34872BE0cdb6b09d45FCa067B07f04a1A9aE1aE" as Address;
-  const tokenId = BigInt(6); // we've only created 6 tokens on testnet, randomIndex will apply later
+  const tokenId = randomTokenId; // we've only created 6 tokens on testnet, randomIndex will apply later
   const quantity = BigInt(1);
   const rewardsRecipients = [
     "0xD246C16EC3b555234630Ab83883aAAcdfd946ceF" as Address,
@@ -151,7 +152,10 @@ app.transaction("/mint", (c) => {
   });
 });
 
-app.frame("/card-reveal", async (c) => {
+app.frame(`/card-reveal/${randomTokenId}`, async (c) => {
+  // const id = c.req.param("tokenId");
+  console.log(c);
+
   const { transactionId } = c;
   // select the cardToken and wallet from the transaction
   const transaction = await publicClient.waitForTransactionReceipt({
@@ -161,7 +165,6 @@ app.frame("/card-reveal", async (c) => {
     abi: zoraCreator1155ImplABI,
     logs: transaction.logs,
   });
-  console.log(decodeLog);
   // the wallet and tokenId can be found in "Purchased"
   const purchasedEvent = decodeLog.filter(
     (event) => event.eventName === "Purchased"
@@ -180,12 +183,13 @@ app.frame("/card-reveal", async (c) => {
     );
   }
   console.log(framesReadingId);
+  // let fid;
 
-  const targetUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
-    `Here's my tarot reading for the day via NFTarot:`
+  const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
+    `Here's my tarot reading for the day from NFTarot:`
   )}&embeds[]=${encodeURIComponent(
-    "https://localhost:3000/card-reveal/"
-  )}${framesReadingId}`;
+    `${process.env.VERCEL_URL}/api/card-reveal/`
+  )}${randomTokenId}`;
 
   return c.res({
     image: (
@@ -235,7 +239,7 @@ app.frame("/card-reveal", async (c) => {
       </div>
     ),
     intents: [
-      <Button.Link href={`${targetUrl}`}>Share Reading</Button.Link>,
+      <Button.Link href={`${shareUrl}`}>Share Reading</Button.Link>,
       <Button action="/" value="begin again">
         Begin Again
       </Button>,
