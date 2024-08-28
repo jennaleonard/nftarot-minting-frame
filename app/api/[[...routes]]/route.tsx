@@ -34,8 +34,8 @@ const app = new Frog({
 
 // Uncomment to use Edge Runtime
 // export const runtime = 'edge'
-export const randomIndex = generateRandomIndex();
-export const randomTokenId = BigInt(6);
+const randomIndex = generateRandomIndex();
+const randomTokenId = BigInt(6);
 
 app.frame("/", (c) => {
   return c.res({
