@@ -5,23 +5,9 @@ import { devtools } from "frog/dev";
 // import { neynar } from 'frog/hubs'
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
-import {
-  Address,
-  encodeAbiParameters,
-  createPublicClient,
-  http,
-  parseAbiParameters,
-  parseEventLogs,
-} from "viem";
-import { baseSepolia } from "viem/chains";
+import { Address, encodeAbiParameters, parseAbiParameters } from "viem";
 import { zoraCreator1155ImplABI } from "@zoralabs/protocol-deployments";
 import { generateRandomIndex, getCardByIndex } from "@/utils/cardUtils";
-import { createReading } from "@/utils/dbUtils";
-
-const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(),
-});
 
 const app = new Frog({
   assetsPath: "/",
@@ -34,8 +20,9 @@ const app = new Frog({
 
 // Uncomment to use Edge Runtime
 // export const runtime = 'edge'
+
 const randomIndex = generateRandomIndex();
-const randomTokenId = BigInt(6);
+const randomTokenId = BigInt(randomIndex);
 
 app.frame("/", (c) => {
   return c.res({
@@ -95,7 +82,7 @@ app.frame("/", (c) => {
 
 app.frame("/card-select", (c) => {
   return c.res({
-    action: `/card-reveal/${randomTokenId}`,
+    action: "/card-reveal",
     image: (
       <div
         style={{
@@ -152,44 +139,53 @@ app.transaction("/mint", (c) => {
   });
 });
 
-app.frame(`/card-reveal/${randomTokenId}`, async (c) => {
-  // const id = c.req.param("tokenId");
-  console.log(c);
-
-  const { transactionId } = c;
-  // select the cardToken and wallet from the transaction
-  const transaction = await publicClient.waitForTransactionReceipt({
-    hash: transactionId as Address,
-  });
-  const decodeLog = parseEventLogs({
-    abi: zoraCreator1155ImplABI,
-    logs: transaction.logs,
-  });
-  // the wallet and tokenId can be found in "Purchased"
-  const purchasedEvent = decodeLog.filter(
-    (event) => event.eventName === "Purchased"
-  );
-  const cardTokenId = purchasedEvent[0].args.tokenId;
-  const senderWallet = purchasedEvent[0].args.sender;
-  const card = await getCardByIndex(Number(cardTokenId));
-  let framesReadingId;
-  if (card) {
-    framesReadingId = await createReading(
-      senderWallet,
-      card?.card_id,
-      card?.deck_id,
-      card?.image_url,
-      Number(cardTokenId)
-    );
-  }
-  console.log(framesReadingId);
-  // let fid;
+app.frame("/card-reveal", async (c) => {
+  // const { transactionId } = c;
+  // // select the cardToken and wallet from the transaction
+  // const transaction = await publicClient.waitForTransactionReceipt({
+  //   hash: transactionId as Address,
+  // });
+  // const decodeLog = parseEventLogs({
+  //   abi: zoraCreator1155ImplABI,
+  //   logs: transaction.logs,
+  // });
+  // // the wallet and tokenId can be found in "Purchased"
+  // const purchasedEvent = decodeLog.filter(
+  //   (event) => event.eventName === "Purchased"
+  // );
+  // const cardTokenId = purchasedEvent[0].args.tokenId;
+  // const senderWallet = purchasedEvent[0].args.sender;
+  // const card = await getCardByIndex(Number(cardTokenId));
+  // let framesReadingId;
+  // if (card) {
+  //   framesReadingId = await createReading(
+  //     senderWallet,
+  //     card?.card_id,
+  //     card?.deck_id,
+  //     card?.image_url,
+  //     Number(cardTokenId)
+  //   );
+  // }
 
   const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
     `Here's my tarot reading for the day from NFTarot:`
   )}&embeds[]=${encodeURIComponent(
-    `${process.env.VERCEL_URL}/api/card-reveal/`
-  )}${randomTokenId}`;
+    `${process.env.VERCEL_URL}/api/card-reveal/card-reading-${randomTokenId}`
+  )}`;
+
+  return c.res({
+    image: `/card-reading-${randomTokenId}`,
+    intents: [
+      <Button.Link href={shareUrl}>Share Reading</Button.Link>,
+      <Button action="/" value="begin again">
+        Begin Again
+      </Button>,
+    ],
+  });
+});
+
+app.image(`/card-reading-${randomTokenId}`, async (c) => {
+  const card = await getCardByIndex(Number(randomTokenId));
 
   return c.res({
     image: (
@@ -238,12 +234,6 @@ app.frame(`/card-reveal/${randomTokenId}`, async (c) => {
         </div>
       </div>
     ),
-    intents: [
-      <Button.Link href={`${shareUrl}`}>Share Reading</Button.Link>,
-      <Button action="/" value="begin again">
-        Begin Again
-      </Button>,
-    ],
   });
 });
 
