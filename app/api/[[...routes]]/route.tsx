@@ -170,7 +170,7 @@ app.frame("/card-reveal", async (c) => {
   const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
     `Here's my tarot reading for the day from NFTarot:`
   )}&embeds[]=${encodeURIComponent(
-    `${process.env.VERCEL_URL}/api/card-reveal/card-reading-${randomTokenId}`
+    `${process.env.VERCEL_URL}/api/card-reading-${randomTokenId}`
   )}`;
 
   return c.res({
