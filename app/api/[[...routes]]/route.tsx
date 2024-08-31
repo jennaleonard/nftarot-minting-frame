@@ -140,38 +140,22 @@ app.transaction("/mint", (c) => {
 });
 
 app.frame("/card-reveal", async (c) => {
-  // const { transactionId } = c;
-  // // select the cardToken and wallet from the transaction
-  // const transaction = await publicClient.waitForTransactionReceipt({
-  //   hash: transactionId as Address,
-  // });
-  // const decodeLog = parseEventLogs({
-  //   abi: zoraCreator1155ImplABI,
-  //   logs: transaction.logs,
-  // });
-  // // the wallet and tokenId can be found in "Purchased"
-  // const purchasedEvent = decodeLog.filter(
-  //   (event) => event.eventName === "Purchased"
-  // );
-  // const cardTokenId = purchasedEvent[0].args.tokenId;
-  // const senderWallet = purchasedEvent[0].args.sender;
-  // const card = await getCardByIndex(Number(cardTokenId));
-  // let framesReadingId;
-  // if (card) {
-  //   framesReadingId = await createReading(
-  //     senderWallet,
-  //     card?.card_id,
-  //     card?.deck_id,
-  //     card?.image_url,
-  //     Number(cardTokenId)
-  //   );
-  // }
+  const { previousButtonValues } = c;
+  // Join the array into a string with a delimiter (e.g., comma)
+  const joinedValues = previousButtonValues?.reverse().join(",");
+  let encodedValues;
+  // Encode the joined string
+  if (joinedValues) {
+    encodedValues = encodeURIComponent(joinedValues);
+  }
 
   const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
     `Here's my tarot reading for the day from NFTarot:`
   )}&embeds[]=${encodeURIComponent(
     `${process.env.VERCEL_URL}/api/card-reading-${randomTokenId}`
-  )}`;
+  )}?previousButtonValues=${encodedValues}`;
+
+  console.log(shareUrl);
 
   return c.res({
     image: `/card-reading-${randomTokenId}`,
@@ -186,7 +170,7 @@ app.frame("/card-reveal", async (c) => {
 
 app.image(`/card-reading-${randomTokenId}`, async (c) => {
   const card = await getCardByIndex(Number(randomTokenId));
-
+  console.log(c);
   return c.res({
     image: (
       <div
