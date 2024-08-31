@@ -140,20 +140,20 @@ app.transaction("/mint", (c) => {
 });
 
 app.frame("/card-reveal", async (c) => {
-  const { previousButtonValues } = c;
-  // Join the array into a string with a delimiter (e.g., comma)
-  const joinedValues = previousButtonValues?.reverse().join(",");
-  let encodedValues;
-  // Encode the joined string
-  if (joinedValues) {
-    encodedValues = encodeURIComponent(joinedValues);
-  }
+  // const { previousButtonValues } = c;
+  // // Join the array into a string with a delimiter (e.g., comma)
+  // const joinedValues = previousButtonValues?.reverse().join(",");
+  // let encodedValues;
+  // // Encode the joined string
+  // if (joinedValues) {
+  //   encodedValues = encodeURIComponent(joinedValues);
+  // }
 
   const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
     `Here's my tarot reading for the day from NFTarot:`
   )}&embeds[]=${encodeURIComponent(
     `${process.env.VERCEL_URL}/api/card-reading-${randomTokenId}`
-  )}?previousButtonValues=${encodedValues}`;
+  )}`;
 
   console.log(shareUrl);
 
