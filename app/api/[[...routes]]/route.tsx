@@ -115,6 +115,7 @@ app.frame("/card-select", (c) => {
 });
 
 app.transaction("/mint", (c) => {
+  const quantity = BigInt(1);
   const minter = "0xd34872BE0cdb6b09d45FCa067B07f04a1A9aE1aE" as Address;
   const tokenId = randomTokenId; // we've only created 6 tokens on testnet
   const rewardsRecipients = [
