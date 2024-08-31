@@ -116,8 +116,7 @@ app.frame("/card-select", (c) => {
 
 app.transaction("/mint", (c) => {
   const minter = "0xd34872BE0cdb6b09d45FCa067B07f04a1A9aE1aE" as Address;
-  const tokenId = randomTokenId; // we've only created 6 tokens on testnet, randomIndex will apply later
-  const quantity = BigInt(1);
+  const tokenId = randomTokenId; // we've only created 6 tokens on testnet
   const rewardsRecipients = [
     "0xD246C16EC3b555234630Ab83883aAAcdfd946ceF" as Address,
   ];
@@ -155,7 +154,7 @@ app.frame("/card-reveal", async (c) => {
     `${process.env.VERCEL_URL}/api/card-reading-${randomTokenId}`
   )}`;
 
-  console.log(shareUrl);
+  // console.log(shareUrl);
 
   return c.res({
     image: `/card-reading-${randomTokenId}`,
