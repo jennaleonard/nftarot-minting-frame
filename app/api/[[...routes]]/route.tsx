@@ -56,11 +56,31 @@ app.frame("/", (c) => {
         </h1>
         <p style={{ fontSize: "1.55rem", marginTop: "0" }}>with NFTarot</p>
         <img
+          src={"/stars1.gif"}
+          style={{
+            width: "20%",
+            top: "3rem",
+            zIndex: "2",
+            position: "absolute",
+            left: "22%",
+          }}
+        />
+        <img
           src={"/card-back.png"}
           style={{
             width: "227px",
             height: "387px",
             marginBottom: ".25rem",
+          }}
+        />
+        <img
+          src={"/stars2.gif"}
+          style={{
+            width: "20%",
+            bottom: "6rem",
+            zIndex: "2",
+            position: "absolute",
+            right: "22%",
           }}
         />
         <p
@@ -99,9 +119,15 @@ app.frame("/card-select", (c) => {
           color: "white",
         }}
       >
-        <p>
-          Take a deep breath. Set your intention. When you're ready, mint your
-          reading.
+        <img
+          src="/cards_loops_1.gif"
+          style={{ margin: "0 auto", width: "70%", height: "130%" }}
+        />
+        <p style={{ position: "absolute", top: "25", right: "28%" }}>
+          Take a deep breath. Set your intention.
+        </p>
+        <p style={{ position: "absolute", bottom: "25", left: "28%" }}>
+          When you're ready, mint your reading.
         </p>
       </div>
     ),
