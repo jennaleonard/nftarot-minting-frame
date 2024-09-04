@@ -27,6 +27,24 @@ const randomTokenId = BigInt(randomIndex);
 app.frame("/", (c) => {
   return c.res({
     action: "/card-select",
+    headers: {
+      "Content-Type": "image/gif",
+    },
+    image: "/welcome-img",
+    intents: [
+      <Button value="begin reading">Begin Reading</Button>,
+      <Button.Link href="https://www.nftarot.com/about">
+        Learn More
+      </Button.Link>,
+    ],
+  });
+});
+
+app.image("/welcome-img", (c) => {
+  return c.res({
+    headers: {
+      "Content-Type": "image/gif",
+    },
     image: (
       <div
         style={{
@@ -57,10 +75,10 @@ app.frame("/", (c) => {
         <p style={{ fontSize: "1.55rem", marginTop: "0" }}>with NFTarot</p>
         <img
           src={"/stars1.gif"}
+          alt="stars1"
           style={{
             width: "20%",
             top: "3rem",
-            zIndex: "2",
             position: "absolute",
             left: "22%",
           }}
@@ -75,10 +93,10 @@ app.frame("/", (c) => {
         />
         <img
           src={"/stars2.gif"}
+          alt="stars2"
           style={{
             width: "20%",
             bottom: "6rem",
-            zIndex: "2",
             position: "absolute",
             right: "22%",
           }}
@@ -91,12 +109,6 @@ app.frame("/", (c) => {
         </p>
       </div>
     ),
-    intents: [
-      <Button value="begin reading">Begin Reading</Button>,
-      <Button.Link href="https://www.nftarot.com/about">
-        Learn More
-      </Button.Link>,
-    ],
   });
 });
 
@@ -121,6 +133,7 @@ app.frame("/card-select", (c) => {
       >
         <img
           src="/cards_loops_1.gif"
+          alt="floating cards"
           style={{ margin: "0 auto", width: "70%", height: "130%" }}
         />
         <p style={{ position: "absolute", top: "25", right: "28%" }}>
