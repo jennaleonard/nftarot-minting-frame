@@ -2,24 +2,21 @@
 
 import { Button, Frog } from "frog";
 import { devtools } from "frog/dev";
-// import { neynar } from 'frog/hubs'
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
 import { Address, encodeAbiParameters, parseAbiParameters } from "viem";
 import { zoraCreator1155ImplABI } from "@zoralabs/protocol-deployments";
 import { generateRandomIndex, getCardByIndex } from "@/utils/cardUtils";
+import { pinata } from "frog/hubs";
 
 const app = new Frog({
   assetsPath: "/",
   basePath: "/api",
   imageAspectRatio: "1:1",
-  // Supply a Hub to enable frame verification.
-  // hub: neynar({ apiKey: 'NEYNAR_FROG_FM' })
+  hub: pinata(),
+  verify: "silent",
   title: "Frog Frame",
 });
-
-// Uncomment to use Edge Runtime
-// export const runtime = 'edge'
 
 const randomIndex = generateRandomIndex();
 const randomTokenId = BigInt(randomIndex);
@@ -27,9 +24,6 @@ const randomTokenId = BigInt(randomIndex);
 app.frame("/", (c) => {
   return c.res({
     action: "/card-select",
-    headers: {
-      "Content-Type": "image/gif",
-    },
     image: "/welcome-img",
     intents: [
       <Button value="begin reading">Begin Reading</Button>,
@@ -42,9 +36,6 @@ app.frame("/", (c) => {
 
 app.image("/welcome-img", (c) => {
   return c.res({
-    headers: {
-      "Content-Type": "image/gif",
-    },
     image: (
       <div
         style={{
@@ -179,22 +170,11 @@ app.transaction("/mint", (c) => {
 });
 
 app.frame("/card-reveal", async (c) => {
-  // const { previousButtonValues } = c;
-  // // Join the array into a string with a delimiter (e.g., comma)
-  // const joinedValues = previousButtonValues?.reverse().join(",");
-  // let encodedValues;
-  // // Encode the joined string
-  // if (joinedValues) {
-  //   encodedValues = encodeURIComponent(joinedValues);
-  // }
-
   const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
     `Here's my tarot reading for the day from NFTarot:`
   )}&embeds[]=${encodeURIComponent(
     `${process.env.VERCEL_URL}/api/card-reading-${randomTokenId}`
   )}`;
-
-  // console.log(shareUrl);
 
   return c.res({
     image: `/card-reading-${randomTokenId}`,
@@ -264,17 +244,3 @@ devtools(app, { serveStatic });
 
 export const GET = handle(app);
 export const POST = handle(app);
-
-// NOTE: That if you are using the devtools and enable Edge Runtime, you will need to copy the devtools
-// static assets to the public folder. You can do this by adding a script to your package.json:
-// ```json`
-// {
-//   scripts: {
-//     "copy-static": "cp -r ./node_modules/frog/_lib/ui/.frog ./public/.frog"
-//   }
-// }
-// ```
-// Next, you'll want to set up the devtools to use the correct assets path:
-// ```ts
-// devtools(app, { assetsPath: '/.frog' })
-// ```
