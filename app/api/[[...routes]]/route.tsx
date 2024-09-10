@@ -77,7 +77,7 @@ app.frame("/card-reveal", async (c) => {
     `Here's my tarot reading for the day from NFTarot:`
   )}&embeds[]=${encodeURIComponent(
     `${process.env.VERCEL_URL}/api/card-reading-${randomTokenId}`
-  )}.png`;
+  )}`;
 
   return c.res({
     image: `/card-reading-${randomTokenId}`,
