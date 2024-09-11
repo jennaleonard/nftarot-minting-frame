@@ -4,10 +4,23 @@ import { Button, Frog } from "frog";
 import { devtools } from "frog/dev";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
-import { Address, encodeAbiParameters, parseAbiParameters } from "viem";
+import {
+  Address,
+  encodeAbiParameters,
+  http,
+  createPublicClient,
+  parseEventLogs,
+  parseAbiParameters,
+} from "viem";
 import { zoraCreator1155ImplABI } from "@zoralabs/protocol-deployments";
+import { baseSepolia } from "viem/chains";
 import { generateRandomIndex, getCardByIndex } from "@/utils/cardUtils";
 import { pinata } from "frog/hubs";
+
+export const publicClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(),
+});
 
 const app = new Frog({
   assetsPath: "/",
@@ -17,9 +30,6 @@ const app = new Frog({
   verify: "silent",
   title: "Frog Frame",
 });
-
-const randomIndex = generateRandomIndex();
-const randomTokenId = BigInt(randomIndex);
 
 app.frame("/", (c) => {
   return c.res({
@@ -48,6 +58,10 @@ app.frame("/card-select", (c) => {
 });
 
 app.transaction("/mint", (c) => {
+  const randomIndex = generateRandomIndex();
+  const randomTokenId = BigInt(randomIndex);
+  console.log(randomTokenId);
+
   const quantity = BigInt(1);
   const minter = "0xd34872BE0cdb6b09d45FCa067B07f04a1A9aE1aE" as Address;
   const tokenId = randomTokenId; // we've only created 6 tokens on testnet
@@ -73,6 +87,24 @@ app.transaction("/mint", (c) => {
 });
 
 app.frame("/card-reveal", async (c) => {
+  console.log(c);
+  const { transactionId } = c;
+  const transaction = await publicClient.waitForTransactionReceipt({
+    hash: transactionId as Address,
+  });
+  const decodeLog = parseEventLogs({
+    abi: zoraCreator1155ImplABI,
+    logs: transaction.logs,
+  });
+  const purchasedEvent = decodeLog.filter(
+    (event) => event.eventName === "Purchased"
+  );
+  const cardTokenId = purchasedEvent[0].args.tokenId;
+
+  console.log("minted card Id:", cardTokenId);
+
+  const card = await getCardByIndex(Number(cardTokenId));
+
   const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
     `Here's my tarot reading for the day from NFTarot:`
   )}&embeds[]=${encodeURIComponent(
@@ -80,20 +112,9 @@ app.frame("/card-reveal", async (c) => {
   )}`;
 
   return c.res({
-    image: `/card-reading-${randomTokenId}`,
-    intents: [
-      <Button.Link href={shareUrl}>Share Reading</Button.Link>,
-      <Button action="/" value="begin again">
-        Begin Again
-      </Button>,
-    ],
-  });
-});
-
-app.image(`/card-reading-${randomTokenId}`, async (c) => {
-  const card = await getCardByIndex(Number(randomTokenId));
-  console.log(c);
-  return c.res({
+    headers: {
+      "Cache-Control": "max-age=0",
+    },
     image: (
       <div
         style={{
@@ -140,8 +161,25 @@ app.image(`/card-reading-${randomTokenId}`, async (c) => {
         </div>
       </div>
     ),
+    intents: [
+      <Button.Link href={shareUrl}>Share Reading</Button.Link>,
+      <Button action="/" value="begin again">
+        Begin Again
+      </Button>,
+    ],
   });
 });
+
+// app.image(`/card-reading/:mintedCardId`, async (c) => {
+//   const mintedCardId = c.req.param('mintedCardId');
+//   console.log(c);
+
+//   return c.res({
+//     image: (
+
+//     ),
+//   });
+// });
 
 devtools(app, { serveStatic });
 
