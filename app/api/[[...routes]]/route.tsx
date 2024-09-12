@@ -7,20 +7,12 @@ import { serveStatic } from "frog/serve-static";
 import {
   Address,
   encodeAbiParameters,
-  http,
-  createPublicClient,
-  parseEventLogs,
   parseAbiParameters,
 } from "viem";
 import { zoraCreator1155ImplABI } from "@zoralabs/protocol-deployments";
-import { baseSepolia } from "viem/chains";
 import { generateRandomIndex, getCardByIndex } from "@/utils/cardUtils";
 import { pinata } from "frog/hubs";
 
-export const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(),
-});
 
 const app = new Frog({
   assetsPath: "/",
@@ -161,17 +153,6 @@ app.frame("/card-reveal/:randomTokenId", async (c) => {
     ],
   });
 });
-
-// app.image(`/card-reading/:mintedCardId`, async (c) => {
-//   const mintedCardId = c.req.param('mintedCardId');
-//   console.log(c);
-
-//   return c.res({
-//     image: (
-
-//     ),
-//   });
-// });
 
 devtools(app, { serveStatic });
 
