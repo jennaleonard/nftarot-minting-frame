@@ -45,26 +45,29 @@ app.frame("/", (c) => {
 });
 
 app.frame("/card-select", (c) => {
+  const randomIndex = generateRandomIndex();
+  const randomTokenId = BigInt(randomIndex);
   return c.res({
-    action: "/card-reveal",
+    action: `/card-reveal/${randomTokenId}`,
     image: "/nftarot-frame-2.gif",
     intents: [
       <Button action="/" value="go back">
         Go Back
       </Button>,
-      <Button.Transaction target="/mint">Mint and Reveal</Button.Transaction>,
+      <Button.Transaction target={`/mint/${randomTokenId}`}>
+        Mint and Reveal
+      </Button.Transaction>,
     ],
   });
 });
 
-app.transaction("/mint", (c) => {
-  const randomIndex = generateRandomIndex();
-  const randomTokenId = BigInt(randomIndex);
+app.transaction("/mint/:randomTokenId", (c) => {
+  const randomTokenId = c.req.param("randomTokenId");
   console.log(randomTokenId);
 
   const quantity = BigInt(1);
   const minter = "0xd34872BE0cdb6b09d45FCa067B07f04a1A9aE1aE" as Address;
-  const tokenId = randomTokenId; // we've only created 6 tokens on testnet
+  const tokenId = BigInt(randomTokenId); // we've only created 6 tokens on testnet
   const rewardsRecipients = [
     "0xD246C16EC3b555234630Ab83883aAAcdfd946ceF" as Address,
   ];
@@ -86,20 +89,9 @@ app.transaction("/mint", (c) => {
   });
 });
 
-app.frame("/card-reveal", async (c) => {
-  console.log(c);
-  const { transactionId } = c;
-  const transaction = await publicClient.waitForTransactionReceipt({
-    hash: transactionId as Address,
-  });
-  const decodeLog = parseEventLogs({
-    abi: zoraCreator1155ImplABI,
-    logs: transaction.logs,
-  });
-  const purchasedEvent = decodeLog.filter(
-    (event) => event.eventName === "Purchased"
-  );
-  const cardTokenId = purchasedEvent[0].args.tokenId;
+app.frame("/card-reveal/:randomTokenId", async (c) => {
+  const randomTokenId = c.req.param("randomTokenId");
+  const cardTokenId = randomTokenId;
 
   console.log("minted card Id:", cardTokenId);
 
@@ -108,7 +100,7 @@ app.frame("/card-reveal", async (c) => {
   const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
     `Here's my tarot reading for the day from NFTarot:`
   )}&embeds[]=${encodeURIComponent(
-    `https://nftarot-minting-frame.vercel.app/api/card-reveal`
+    `https://nftarot-minting-frame.vercel.app/api/card-reveal/${randomTokenId}`
   )}`;
 
   return c.res({
