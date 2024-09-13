@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@coinbase/onchainkit": "^0.31.5",
     "@supabase/supabase-js": "^2.45.1",
     "@zoralabs/protocol-deployments": "^0.2.2",
     "frog": "latest",

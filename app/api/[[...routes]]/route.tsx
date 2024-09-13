@@ -4,15 +4,11 @@ import { Button, Frog } from "frog";
 import { devtools } from "frog/dev";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
-import {
-  Address,
-  encodeAbiParameters,
-  parseAbiParameters,
-} from "viem";
+import { Address, encodeAbiParameters, parseAbiParameters } from "viem";
 import { zoraCreator1155ImplABI } from "@zoralabs/protocol-deployments";
 import { generateRandomIndex, getCardByIndex } from "@/utils/cardUtils";
 import { pinata } from "frog/hubs";
-
+import { getFarcasterUserAddress } from "@coinbase/onchainkit/farcaster";
 
 const app = new Frog({
   assetsPath: "/",
@@ -53,9 +49,12 @@ app.frame("/card-select", (c) => {
   });
 });
 
-app.transaction("/mint/:randomTokenId", (c) => {
+app.transaction("/mint/:randomTokenId", async (c) => {
   const randomTokenId = c.req.param("randomTokenId");
-  console.log(randomTokenId);
+  const { fid } = c.frameData as any;
+  const userAddress = await getFarcasterUserAddress(fid);
+
+  console.log(userAddress);
 
   const quantity = BigInt(1);
   const minter = "0xd34872BE0cdb6b09d45FCa067B07f04a1A9aE1aE" as Address;
@@ -65,10 +64,7 @@ app.transaction("/mint/:randomTokenId", (c) => {
   ];
   const minterArguments = encodeAbiParameters(
     parseAbiParameters("address x, string y"),
-    [
-      "0x0E1414C54161A80A18F0e7eB9576B30c20BfD0C9",
-      "received a tarot reading onchain",
-    ]
+    [userAddress as Address, "received a tarot reading onchain"]
   );
 
   return c.contract({
