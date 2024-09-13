@@ -51,7 +51,7 @@ app.frame("/card-select", (c) => {
 
 app.transaction("/mint/:randomTokenId", async (c) => {
   const randomTokenId = c.req.param("randomTokenId");
-  const { fid } = c.frameData as any;
+  const { fid } = c.frameData?.castId.fid as any;
   const userAddress = await getFarcasterUserAddress(fid);
 
   console.log(userAddress);
